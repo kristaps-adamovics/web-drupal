@@ -1,0 +1,81 @@
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'drupal'
+      MYSQL_USER: 'dbuser'
+      MYSQL_PASSWORD: 'drupal-secret'
+      MYSQL_ROOT_PASSWORD: 'very-secretroot-pass'
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  drupal:
+    container_name: drupal
+    image: drupal:11.3.3-php8.4-apache-trixie
+    restart: always
+    ports:
+      - "8888:80"
+    volumes:
+      - drupal_root:/opt/drupal
+      - ./custom/modules:/opt/drupal/web/modules/custom
+      - ./custom/themes:/opt/drupal/web/themes/custom
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        groupadd -g 1000 drupal 2>/dev/null || true
+        useradd -m -u 1000 -g 1000 drupal 2>/dev/null || true
+        usermod -aG drupal www-data 2>/dev/null || true
+        
+        if [ "$$(stat -c '%u' /opt/drupal)" = "0" ]; then
+          echo "Fixing Drupal file permissions for the first time..."
+          chown -R 1000:1000 /opt/drupal
+        else
+          echo "Permissions already set, skipping chown..."
+        fi
+        
+        echo "Preparing sites/default for Drupal installer..."
+        mkdir -p /opt/drupal/web/sites/default/files
+        if [ ! -f /opt/drupal/web/sites/default/settings.php ]; then
+          cp /opt/drupal/web/sites/default/default.settings.php /opt/drupal/web/sites/default/settings.php
+        fi
+        
+        chown -R 1000:www-data /opt/drupal/web/sites/default
+        chmod -R 775 /opt/drupal/web/sites/default
+        # -------------------------------------
+        
+        exec apache2-foreground
+
+  ssh:
+    container_name: ssh
+    image: lscr.io/linuxserver/openssh-server:latest
+    restart: always
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - USER_NAME=drupal
+      - USER_PASSWORD=myPassword
+      - SUDO_ACCESS=true
+      - PASSWORD_ACCESS=true
+    volumes:
+      - drupal_root:/opt/drupal
+      - ./custom/modules:/opt/drupal/web/modules/custom
+      - ./custom/themes:/opt/drupal/web/themes/custom
+    ports:
+      - "2222:2222"
+
+  adminer:
+    image: adminer:latest
+    restart: always
+    ports:
+      - "8090:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:
+  drupal_root:
