@@ -1,0 +1,74 @@
+iot_sensors.reports:
+  path: '/iot-sensors/reports'
+  defaults:
+    _controller: '\Drupal\iot_sensors\Controller\ReportsController::overview'
+    _title: 'Telpu rādītāju pārskats'
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: TRUE
+
+iot_sensors.building:
+  path: '/iot-sensors/building'
+  defaults:
+    _controller: '\Drupal\iot_sensors\Controller\BuildingController::overview'
+    _title: 'Ēkas plāns un sensori'
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: TRUE
+
+iot_sensors.room_edit:
+  path: '/iot-sensors/rooms/{room_id}/edit'
+  defaults:
+    _form: '\Drupal\iot_sensors\Form\RoomEditForm'
+    _title: 'Labot telpu'
+  requirements:
+    _permission: 'access content'
+    room_id: '\d+'
+
+iot_sensors.room_delete:
+  path: '/iot-sensors/rooms/{room_id}/delete'
+  defaults:
+    _form: '\Drupal\iot_sensors\Form\RoomDeleteForm'
+    _title: 'Dzēst telpu'
+  requirements:
+    _permission: 'access content'
+    room_id: '\d+'
+
+iot_sensors.sensor_edit:
+  path: '/iot-sensors/sensors/{sensor_id}/edit'
+  defaults:
+    _form: '\Drupal\iot_sensors\Form\SensorEditForm'
+    _title: 'Labot sensoru'
+  requirements:
+    _permission: 'access content'
+    sensor_id: '\d+'
+
+iot_sensors.sensor_delete:
+  path: '/iot-sensors/sensors/{sensor_id}/delete'
+  defaults:
+    _form: '\Drupal\iot_sensors\Form\SensorDeleteForm'
+    _title: 'Dzēst sensoru'
+  requirements:
+    _permission: 'access content'
+    sensor_id: '\d+'
+
+iot_sensors.alerts:
+  path: '/iot-sensors/alerts'
+  defaults:
+    _controller: '\Drupal\iot_sensors\Controller\AlertsController::overview'
+    _title: 'Brīdinājumi'
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: TRUE
+
+iot_sensors.alert_rule_delete:
+  path: '/iot-sensors/alerts/rules/{rule_id}/delete'
+  defaults:
+    _form: '\Drupal\iot_sensors\Form\AlertRuleDeleteForm'
+    _title: 'Dzēst brīdinājuma noteikumu'
+  requirements:
+    _permission: 'access content'
+    rule_id: '\d+'

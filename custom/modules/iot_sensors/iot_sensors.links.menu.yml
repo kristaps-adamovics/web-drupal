@@ -1,0 +1,27 @@
+iot_sensors.reports:
+  title: 'Telpu rādītāju pārskats'
+  description: 'Tabulārs un grafisks telpu sensoru datu pārskats.'
+  route_name: iot_sensors.reports
+  parent: system.admin_reports
+  weight: 20
+
+iot_sensors.data:
+  title: 'Dati'
+  description: 'Atvērt telpu sensoru datu pārskatu.'
+  route_name: iot_sensors.reports
+  menu_name: main
+  weight: 0
+
+iot_sensors.building:
+  title: 'Ēkas plāns'
+  description: 'Telpas un sensori.'
+  route_name: iot_sensors.building
+  menu_name: main
+  weight: 1
+
+iot_sensors.alerts:
+  title: 'Brīdinājumi'
+  description: 'Sensoru brīdinājumu pārskats.'
+  route_name: iot_sensors.alerts
+  menu_name: main
+  weight: 2

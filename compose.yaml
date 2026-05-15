@@ -20,7 +20,6 @@ services:
     volumes:
       - drupal_root:/opt/drupal
       - ./custom/modules:/opt/drupal/web/modules/custom
-      - ./custom/themes:/opt/drupal/web/themes/custom
     entrypoint:
       - /bin/sh
       - -c
@@ -62,7 +61,6 @@ services:
     volumes:
       - drupal_root:/opt/drupal
       - ./custom/modules:/opt/drupal/web/modules/custom
-      - ./custom/themes:/opt/drupal/web/themes/custom
     ports:
       - "2222:2222"
 

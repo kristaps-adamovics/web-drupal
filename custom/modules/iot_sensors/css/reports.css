@@ -1,0 +1,55 @@
+.iot-report-filters {
+  align-items: end;
+  display: grid;
+  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-bottom: 25px;
+}
+
+.iot-report-filters .form-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.iot-report-summary {
+  color: #444;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.iot-report-chart {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 25px;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.iot-report-chart canvas {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+
+.iot-report-empty-chart {
+  color: #555;
+  padding: 32px;
+  text-align: center;
+}
+
+.iot-report-table td,
+.iot-report-table th {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .iot-report-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .iot-report-table {
+    display: block;
+    overflow-x: auto;
+  }
+}

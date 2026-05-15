@@ -1,0 +1,50 @@
+.iot-building-plan {
+  border: 2px solid #b7c7d6;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin-bottom: 25px;
+  padding: 15px;
+}
+
+.iot-plan-room {
+  background: #f5f9fc;
+  border: 1px solid #9eb4c8;
+  min-height: 120px;
+  padding: 12px;
+}
+
+.iot-plan-sensors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.iot-plan-sensor {
+  border: 1px solid #0b6fb3;
+  display: inline-block;
+  font-size: 13px;
+  padding: 3px 7px;
+  text-decoration: none;
+}
+
+.iot-building-forms {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin: 25px 0;
+}
+
+.iot-building-forms details {
+  border: 1px solid #ccc;
+  padding: 12px;
+}
+
+.iot-room-sensors {
+  margin: 0;
+}
+
+.iot-room-sensors li {
+  margin-bottom: 4px;
+}

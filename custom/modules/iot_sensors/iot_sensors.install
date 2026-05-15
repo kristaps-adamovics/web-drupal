@@ -1,0 +1,272 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for the IoT Sensors module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function iot_sensors_schema(): array {
+  $schema['iot_sensors_rooms'] = [
+    'description' => 'Rooms where IoT sensors are installed.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'name' => [
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ],
+      'floor' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ],
+    ],
+    'primary key' => ['id'],
+  ];
+
+  $schema['iot_sensors_sensors'] = [
+    'description' => 'IoT sensors assigned to rooms.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'room_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'sensor_code' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ],
+      'metric' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'unit' => [
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'room_id' => ['room_id'],
+      'metric' => ['metric'],
+    ],
+    'unique keys' => [
+      'sensor_code' => ['sensor_code'],
+    ],
+  ];
+
+  $schema['iot_sensors_readings'] = [
+    'description' => 'Time-series sensor readings.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'sensor_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'value' => [
+        'type' => 'numeric',
+        'precision' => 10,
+        'scale' => 2,
+        'not null' => TRUE,
+      ],
+      'created' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'sensor_created' => ['sensor_id', 'created'],
+      'created' => ['created'],
+    ],
+  ];
+
+  $schema['iot_sensors_alert_rules'] = [
+    'description' => 'Simple alert rules for room sensors.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'room_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'sensor_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'operator' => [
+        'type' => 'varchar',
+        'length' => 2,
+        'not null' => TRUE,
+      ],
+      'threshold' => [
+        'type' => 'numeric',
+        'precision' => 10,
+        'scale' => 2,
+        'not null' => TRUE,
+      ],
+      'message' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ],
+      'created' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'room_id' => ['room_id'],
+      'sensor_id' => ['sensor_id'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function iot_sensors_install(): void {
+  _iot_sensors_seed_demo_data();
+}
+
+/**
+ * Adds reporting storage for installations that already enabled the module.
+ */
+function iot_sensors_update_11001(): void {
+  $schema = \Drupal::database()->schema();
+
+  foreach (iot_sensors_schema() as $table => $definition) {
+    if (!$schema->tableExists($table)) {
+      $schema->createTable($table, $definition);
+    }
+  }
+
+  _iot_sensors_seed_demo_data();
+}
+
+/**
+ * Adds alert rules table.
+ */
+function iot_sensors_update_11002(): void {
+  $schema = \Drupal::database()->schema();
+  $tables = iot_sensors_schema();
+
+  if (!$schema->tableExists('iot_sensors_alert_rules')) {
+    $schema->createTable('iot_sensors_alert_rules', $tables['iot_sensors_alert_rules']);
+  }
+}
+
+/**
+ * Seeds initial room, sensor, and reading data when storage is empty.
+ */
+function _iot_sensors_seed_demo_data(): void {
+  $connection = \Drupal::database();
+
+  if ($connection->schema()->tableExists('iot_sensors_rooms')) {
+    $existing = (int) $connection->select('iot_sensors_rooms', 'r')
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+    if ($existing > 0) {
+      return;
+    }
+  }
+
+  $rooms = [
+    ['name' => 'Auditorija 101', 'floor' => '1'],
+    ['name' => 'Laboratorija 214', 'floor' => '2'],
+    ['name' => 'Biblioteka', 'floor' => '1'],
+  ];
+
+  $room_ids = [];
+  foreach ($rooms as $room) {
+    $room_ids[$room['name']] = $connection->insert('iot_sensors_rooms')
+      ->fields($room)
+      ->execute();
+  }
+
+  $sensors = [
+    ['room' => 'Auditorija 101', 'sensor_code' => 'TMP-101', 'metric' => 'temperature', 'unit' => 'C'],
+    ['room' => 'Auditorija 101', 'sensor_code' => 'HUM-101', 'metric' => 'humidity', 'unit' => '%'],
+    ['room' => 'Auditorija 101', 'sensor_code' => 'CO2-101', 'metric' => 'co2', 'unit' => 'ppm'],
+    ['room' => 'Laboratorija 214', 'sensor_code' => 'TMP-214', 'metric' => 'temperature', 'unit' => 'C'],
+    ['room' => 'Laboratorija 214', 'sensor_code' => 'HUM-214', 'metric' => 'humidity', 'unit' => '%'],
+    ['room' => 'Biblioteka', 'sensor_code' => 'TMP-BIB', 'metric' => 'temperature', 'unit' => 'C'],
+    ['room' => 'Biblioteka', 'sensor_code' => 'CO2-BIB', 'metric' => 'co2', 'unit' => 'ppm'],
+  ];
+
+  $sensor_ids = [];
+  foreach ($sensors as $sensor) {
+    $sensor_ids[$sensor['sensor_code']] = $connection->insert('iot_sensors_sensors')
+      ->fields([
+        'room_id' => $room_ids[$sensor['room']],
+        'sensor_code' => $sensor['sensor_code'],
+        'metric' => $sensor['metric'],
+        'unit' => $sensor['unit'],
+      ])
+      ->execute();
+  }
+
+  $demo_end = strtotime('2020-01-17 09:00:00');
+  foreach ($sensor_ids as $sensor_code => $sensor_id) {
+    for ($day = 13; $day >= 0; $day--) {
+      $created = strtotime("-{$day} days", $demo_end);
+      foreach ([0, 6, 12] as $hour_offset) {
+        $connection->insert('iot_sensors_readings')
+          ->fields([
+            'sensor_id' => $sensor_id,
+            'value' => _iot_sensors_demo_value($sensor_code, $day, $hour_offset),
+            'created' => $created + ($hour_offset * 3600),
+          ])
+          ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * Creates repeatable demo values for initial reports.
+ */
+function _iot_sensors_demo_value(string $sensor_code, int $day, int $hour_offset): float {
+  $cycle = ($day % 5) + ($hour_offset / 12);
+
+  if (str_starts_with($sensor_code, 'TMP')) {
+    return round(20.5 + $cycle + (str_contains($sensor_code, '214') ? 1.4 : 0), 2);
+  }
+
+  if (str_starts_with($sensor_code, 'HUM')) {
+    return round(42 + ($cycle * 2.3), 2);
+  }
+
+  return round(650 + ($cycle * 75) + (str_contains($sensor_code, '101') ? 90 : 0), 2);
+}

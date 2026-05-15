@@ -1,0 +1,5 @@
+name: 'IoT Sensors'
+type: module
+description: 'Telpu, sensoru, merijumu un bridinajumu parvaldiba.'
+package: Custom
+core_version_requirement: ^11
