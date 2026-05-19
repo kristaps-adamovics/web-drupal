@@ -175,6 +175,7 @@ class BuildingController extends ControllerBase {
       '#header' => [$this->t('ID'), $this->t('Telpa'), $this->t('Stāvs'), $this->t('Sensoru skaits'), $this->t('Sensori'), $this->t('Darbības')],
       '#rows' => $rows,
       '#empty' => $this->t('Nav pievienotu telpu.'),
+      '#attributes' => ['class' => ['iot-building-table']],
     ];
   }
 
@@ -224,6 +225,7 @@ class BuildingController extends ControllerBase {
       '#header' => [$this->t('ID'), $this->t('Telpa'), $this->t('Sensora kods'), $this->t('Tips'), $this->t('Mērvienība'), $this->t('Dati'), $this->t('Darbības')],
       '#rows' => $rows,
       '#empty' => $this->t('Nav pievienotu sensoru.'),
+      '#attributes' => ['class' => ['iot-building-table']],
     ];
   }
 

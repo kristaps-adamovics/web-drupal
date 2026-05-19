@@ -5,49 +5,74 @@
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   margin-bottom: 25px;
 }
-
 .iot-report-filters .form-actions {
   align-items: center;
   display: flex;
   gap: 8px;
 }
-
 .iot-report-summary {
   color: #444;
   font-weight: 600;
   margin-bottom: 12px;
 }
-
 .iot-report-chart {
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 10px !important;
   margin-bottom: 25px;
   overflow: hidden;
-  padding: 16px;
+  padding: 20px;
+  background: #fff !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
 }
-
 .iot-report-chart canvas {
   display: block;
   inline-size: 100%;
   max-inline-size: 100%;
 }
-
 .iot-report-empty-chart {
   color: #555;
   padding: 32px;
   text-align: center;
 }
-
-.iot-report-table td,
-.iot-report-table th {
+table.iot-report-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 14px !important;
+  background: #fff !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+table.iot-report-table th {
+  background: #378ADD !important;
+  color: #fff !important;
+  padding: 12px 16px !important;
+  text-align: left !important;
+  font-weight: 500 !important;
+  font-size: 13px !important;
+}
+table.iot-report-table td {
+  padding: 10px 16px !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  color: #333 !important;
   white-space: nowrap;
 }
-
+table.iot-report-table tr:last-child td {
+  border-bottom: none !important;
+}
+table.iot-report-table tr:hover td {
+  background: #f0f7ff !important;
+}
+table.iot-report-table tr:nth-child(even) td {
+  background: #fafafa !important;
+}
+table.iot-report-table tr:nth-child(even):hover td {
+  background: #f0f7ff !important;
+}
 @media (max-width: 720px) {
   .iot-report-filters {
     grid-template-columns: 1fr;
   }
-
   .iot-report-table {
     display: block;
     overflow-x: auto;

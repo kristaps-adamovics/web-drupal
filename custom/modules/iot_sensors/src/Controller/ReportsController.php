@@ -8,6 +8,7 @@ use Drupal\Core\Database\Connection;
 use Drupal\Core\Database\Query\SelectInterface;
 use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Form\FormBuilderInterface;
+use Drupal\Core\Render\Markup;
 use Drupal\iot_sensors\Form\ReportsFilterForm;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -20,7 +21,13 @@ class ReportsController extends ControllerBase {
   protected $time;
   protected $filterFormBuilder;
 
-  public function __construct(Connection $database, DateFormatterInterface $dateFormatter, RequestStack $requestStack, TimeInterface $time, FormBuilderInterface $filterFormBuilder) {
+  public function __construct(
+    Connection $database,
+    DateFormatterInterface $dateFormatter,
+    RequestStack $requestStack,
+    TimeInterface $time,
+    FormBuilderInterface $filterFormBuilder
+  ) {
     $this->database = $database;
     $this->dateFormatter = $dateFormatter;
     $this->requestStack = $requestStack;
@@ -58,6 +65,7 @@ class ReportsController extends ControllerBase {
         ],
       ],
       'filter' => $this->buildFilterForm($filters),
+
       'summary' => [
         '#type' => 'container',
         '#attributes' => ['class' => ['iot-report-summary']],
@@ -65,6 +73,7 @@ class ReportsController extends ControllerBase {
           '#markup' => $this->formatPlural(count($rows), 'Atrasts 1 mērījums.', 'Atrasti @count mērījumi.'),
         ],
       ],
+
       'chart' => [
         '#type' => 'container',
         '#attributes' => ['class' => ['iot-report-chart']],
@@ -84,6 +93,8 @@ class ReportsController extends ControllerBase {
           '#markup' => $this->t('Nav datu grafiskai attēlošanai.'),
         ],
       ],
+
+      // ==================== UZLABOTĀ TABULA ====================
       'table' => [
         '#type' => 'table',
         '#header' => [
@@ -95,7 +106,17 @@ class ReportsController extends ControllerBase {
         ],
         '#rows' => $this->buildTableRows($rows),
         '#empty' => $this->t('Izvēlētajā periodā dati netika atrasti.'),
-        '#attributes' => ['class' => ['iot-report-table']],
+        '#attributes' => [
+          'class' => [
+            'table',
+            'table-striped',
+            'table-hover',
+            'table-responsive',
+            'iot-report-table',
+          ],
+        ],
+        '#sticky' => TRUE,
+        '#caption' => $this->t('Mērījumu saraksts'),
       ],
     ];
   }
@@ -111,7 +132,6 @@ class ReportsController extends ControllerBase {
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_from)) {
       $date_from = $default_dates['date_from'];
     }
-
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_to)) {
       $date_to = $default_dates['date_to'];
     }
@@ -158,11 +178,9 @@ class ReportsController extends ControllerBase {
     if ($filters['room_id'] > 0) {
       $query->condition('room.id', $filters['room_id']);
     }
-
     if ($filters['metric'] !== '' && array_key_exists($filters['metric'], $this->metricOptions())) {
       $query->condition('s.metric', $filters['metric']);
     }
-
     if ($filters['sensor_id'] > 0) {
       $query->condition('s.id', $filters['sensor_id']);
     }
@@ -177,10 +195,12 @@ class ReportsController extends ControllerBase {
     $query = $this->database->select('iot_sensors_readings', 'r');
     $query->join('iot_sensors_sensors', 's', 's.id = r.sensor_id');
     $query->join('iot_sensors_rooms', 'room', 'room.id = s.room_id');
+
     $query->fields('r', ['value', 'created']);
     $query->fields('s', ['id', 'sensor_code', 'metric', 'unit']);
     $query->addField('room', 'id', 'room_id');
     $query->addField('room', 'name', 'room_name');
+
     return $query;
   }
 
@@ -188,12 +208,23 @@ class ReportsController extends ControllerBase {
     $table_rows = [];
 
     foreach ($rows as $row) {
+      $value = (float) $row->value;
+      $unit = $row->unit ?? '';
+
+      $formatted_value = Markup::create(number_format($value, 2) . ' <span class="text-muted">' . htmlspecialchars($unit, ENT_QUOTES, 'UTF-8') . '</span>');
+
       $table_rows[] = [
-        $this->dateFormatter->format((int) $row->created, 'custom', 'Y-m-d H:i'),
+        [
+          'data' => $this->dateFormatter->format((int) $row->created, 'custom', 'Y-m-d H:i'),
+          'class' => ['text-nowrap'],
+        ],
         $row->room_name,
         $row->sensor_code,
         $this->metricOptions()[$row->metric] ?? $row->metric,
-        number_format((float) $row->value, 2) . ' ' . $row->unit,
+        [
+          'data' => $formatted_value,
+          'class' => ['text-end', 'fw-medium'],
+        ],
       ];
     }
 
@@ -208,8 +239,9 @@ class ReportsController extends ControllerBase {
     foreach ($ordered as $row) {
       $label = $this->dateFormatter->format((int) $row->created, 'custom', 'm-d H:i');
       $series_key = $row->room_name . ' / ' . ($this->metricOptions()[$row->metric] ?? $row->metric);
+
       $labels[$label] = $label;
-      $series[$series_key]['label'] = $series_key . ' (' . $row->unit . ')';
+      $series[$series_key]['label'] = $series_key . ' (' . ($row->unit ?? '') . ')';
       $series[$series_key]['values'][$label] = (float) $row->value;
     }
 
@@ -218,10 +250,8 @@ class ReportsController extends ControllerBase {
       $normalized[] = [
         'label' => $item['label'],
         'values' => array_map(
-          function ($label) use ($item) {
-            return $item['values'][$label] ?? NULL;
-          },
-          array_values($labels),
+          fn($label) => $item['values'][$label] ?? NULL,
+          array_values($labels)
         ),
       ];
     }

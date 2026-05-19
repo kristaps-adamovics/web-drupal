@@ -7,123 +7,133 @@
 
         if (!data.labels.length || !data.series.length) {
           canvas.hidden = true;
-          empty.hidden = false;
+          if (empty) empty.hidden = false;
           return;
         }
 
-        empty.hidden = true;
+        if (empty) empty.hidden = true;
         drawChart(canvas, data);
       });
     },
   };
 
   function drawChart(canvas, data) {
-    var ctx = canvas.getContext('2d');
-    var width = canvas.clientWidth || canvas.parentElement.clientWidth || 900;
-    var height = Number(canvas.getAttribute('height')) || 320;
-    var ratio = window.devicePixelRatio || 1;
-    var padding = { top: 28, right: 28, bottom: 72, left: 64 };
-    var colors = ['blue', 'red', 'green', 'purple', 'orange', 'teal'];
+    var COLORS = ['#378ADD', '#1D9E75', '#D85A30', '#7F77DD', '#BA7517', '#D4537E'];
+    var DASH = [[], [6, 3], [3, 3], [8, 4, 2, 4], [], [4, 2]];
 
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-    ctx.scale(ratio, ratio);
-    ctx.clearRect(0, 0, width, height);
-    ctx.font = '12px Arial, sans-serif';
-    ctx.lineWidth = 2;
+    var wrapper = canvas.parentElement;
 
-    var all = data.series.flatMap((item) => item.values.filter((value) => value !== null));
-    var min = Math.min(...all);
-    var max = Math.max(...all);
-    var spread = max - min || 1;
-    var yMin = min - spread * 0.08;
-    var yMax = max + spread * 0.08;
-    var plotWidth = width - padding.left - padding.right;
-    var plotHeight = height - padding.top - padding.bottom;
+    var legendEl = document.createElement('div');
+    legendEl.style.cssText = 'display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;font-size:12px;';
+    wrapper.insertBefore(legendEl, canvas);
 
-    ctx.strokeStyle = '#d7dde5';
-    ctx.fillStyle = '#425466';
-    ctx.beginPath();
-    ctx.moveTo(padding.left, padding.top);
-    ctx.lineTo(padding.left, padding.top + plotHeight);
-    ctx.lineTo(padding.left + plotWidth, padding.top + plotHeight);
-    ctx.stroke();
+    var tooltipEl = document.createElement('div');
+    tooltipEl.style.cssText = 'position:fixed;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:12px;pointer-events:none;display:none;z-index:9999;box-shadow:0 2px 8px rgba(0,0,0,0.10);min-width:180px;';
+    document.body.appendChild(tooltipEl);
 
-    for (var i = 0; i <= 4; i++) {
-      var y = padding.top + plotHeight - (plotHeight * i / 4);
-      var value = yMin + ((yMax - yMin) * i / 4);
-      ctx.strokeStyle = '#edf1f5';
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(padding.left + plotWidth, y);
-      ctx.stroke();
-      ctx.fillStyle = '#5f6f7f';
-      ctx.fillText(value.toFixed(1), 12, y + 4);
-    }
-
-    var step = data.labels.length > 1 ? plotWidth / (data.labels.length - 1) : plotWidth;
-
-    data.series.forEach((item, index) => {
-      ctx.strokeStyle = colors[index % colors.length];
-      ctx.fillStyle = colors[index % colors.length];
-      ctx.beginPath();
-
-      item.values.forEach((value, valueIndex) => {
-        if (value === null) {
-          return;
-        }
-        var x = padding.left + (step * valueIndex);
-        var y = padding.top + plotHeight - ((value - yMin) / (yMax - yMin) * plotHeight);
-
-        if (valueIndex === 0 || item.values[valueIndex - 1] === null) {
-          ctx.moveTo(x, y);
-        }
-        else {
-          ctx.lineTo(x, y);
-        }
-      });
-
-      ctx.stroke();
-
-      item.values.forEach((value, valueIndex) => {
-        if (value === null) {
-          return;
-        }
-        var x = padding.left + (step * valueIndex);
-        var y = padding.top + plotHeight - ((value - yMin) / (yMax - yMin) * plotHeight);
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fill();
-      });
+    var co2Series = data.series.filter(function(s) {
+      return s.label && s.label.toLowerCase().indexOf('co2') !== -1;
+    });
+    var otherSeries = data.series.filter(function(s) {
+      return !s.label || s.label.toLowerCase().indexOf('co2') === -1;
     });
 
-    var labelEvery = Math.max(1, Math.ceil(data.labels.length / 8));
-    ctx.fillStyle = '#425466';
-    data.labels.forEach((label, index) => {
-      if (index % labelEvery !== 0 && index !== data.labels.length - 1) {
-        return;
-      }
-      var x = padding.left + (step * index);
-      ctx.save();
-      ctx.translate(x, height - 52);
-      ctx.rotate(-Math.PI / 5);
-      ctx.fillText(label, 0, 0);
-      ctx.restore();
+    var datasets = data.series.map(function(s, i) {
+      var isCO2 = s.label && s.label.toLowerCase().indexOf('co2') !== -1;
+      return {
+        label: s.label,
+        data: s.values,
+        borderColor: COLORS[i % COLORS.length],
+        backgroundColor: COLORS[i % COLORS.length] + '22',
+        borderWidth: 2,
+        borderDash: DASH[i % DASH.length],
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: COLORS[i % COLORS.length],
+        tension: 0.35,
+        fill: false,
+        yAxisID: isCO2 ? 'y1' : 'y2',
+        spanGaps: false,
+      };
     });
 
-    var legendX = padding.left;
-    var legendY = 16;
-    data.series.slice(0, 6).forEach((item, index) => {
-      ctx.fillStyle = colors[index % colors.length];
-      ctx.fillRect(legendX, legendY - 9, 10, 10);
-      ctx.fillStyle = '#25313d';
-      ctx.fillText(item.label, legendX + 16, legendY);
-      legendX += ctx.measureText(item.label).width + 36;
+    data.series.forEach(function(s, i) {
+      var span = document.createElement('span');
+      span.style.cssText = 'display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#555;';
+      var dot = document.createElement('span');
+      dot.style.cssText = 'width:18px;height:3px;background:' + COLORS[i % COLORS.length] + ';border-radius:2px;display:inline-block;flex-shrink:0;';
+      span.appendChild(dot);
+      span.appendChild(document.createTextNode(s.label));
+      span.addEventListener('click', function() {
+        var meta = chart.getDatasetMeta(i);
+        meta.hidden = !meta.hidden;
+        span.style.opacity = meta.hidden ? '0.35' : '1';
+        chart.update();
+      });
+      legendEl.appendChild(span);
+    });
 
-      if (legendX > width - 180) {
-        legendX = padding.left;
-        legendY += 18;
-      }
+    var canvasWrapper = document.createElement('div');
+    canvasWrapper.style.cssText = 'position:relative;width:100%;height:320px;';
+    wrapper.insertBefore(canvasWrapper, canvas);
+    canvasWrapper.appendChild(canvas);
+
+    var chart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: data.labels,
+        datasets: datasets,
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: false,
+            external: function(context) {
+              var tt = context.tooltip;
+              if (tt.opacity === 0) {
+                tooltipEl.style.display = 'none';
+                return;
+              }
+              var lines = tt.dataPoints.map(function(p) {
+                return '<div style="display:flex;align-items:center;gap:6px;margin:2px 0;">' +
+                  '<span style="width:8px;height:8px;border-radius:50%;background:' + p.dataset.borderColor + ';display:inline-block;flex-shrink:0;"></span>' +
+                  '<span style="color:#888;font-size:11px;flex:1;">' + (p.dataset.label || '') + '</span>' +
+                  '<span style="font-weight:500;">' + p.formattedValue + '</span>' +
+                  '</div>';
+              });
+              tooltipEl.innerHTML = '<div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:500;">' + (tt.title[0] || '') + '</div>' + lines.join('');
+              tooltipEl.style.display = 'block';
+              var rect = canvas.getBoundingClientRect();
+              tooltipEl.style.left = (rect.left + tt.caretX + 14) + 'px';
+              tooltipEl.style.top = (rect.top + tt.caretY - 10) + 'px';
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(128,128,128,0.08)' },
+            ticks: { font: { size: 11 }, color: '#888', maxRotation: 35, autoSkip: true, maxTicksLimit: 10 },
+          },
+          y1: {
+            type: 'linear',
+            position: 'left',
+            title: { display: true, text: 'CO2 (ppm)', font: { size: 11 }, color: '#888' },
+            grid: { color: 'rgba(128,128,128,0.08)' },
+            ticks: { font: { size: 11 }, color: '#888' },
+          },
+          y2: {
+            type: 'linear',
+            position: 'right',
+            title: { display: true, text: 'Temp (C) / Mitrums (%)', font: { size: 11 }, color: '#888' },
+            grid: { drawOnChartArea: false },
+            ticks: { font: { size: 11 }, color: '#888' },
+          },
+        },
+      },
     });
   }
 })(Drupal, drupalSettings, once);

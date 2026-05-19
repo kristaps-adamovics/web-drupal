@@ -9,9 +9,23 @@ reports:
     - core/drupal
     - core/drupalSettings
     - core/once
-
+    - iot_sensors/chartjs
 building:
   version: 1.x
   css:
     theme:
       css/building.css: {}
+alerts:
+  version: 1.x
+  css:
+    theme:
+      css/building.css: {}
+chartjs:
+  version: 4.4.1
+  js:
+    https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js: { type: external, minified: true }
+alerts_table:
+  version: 1.x
+  css:
+    theme:
+      css/alerts-table.css: {}
