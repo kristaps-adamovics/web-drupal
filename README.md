@@ -43,12 +43,34 @@ Izveidota Drupal moduļa sadaļa `Brīdinājumi`:
 
 ```
 {
-  “sensor”: “100”,
-  “value”: “2000”
+  "sensor": "100",
+  "value": "2000"
 }
 ```
 
 Informācijas iesūtīšanu var pārbaudīt ar Postman vai speciāli izstrādātu skriptu palīdzību. Lai būtu pieejami demo dati, būtu ieteicams importēt vismaz daļu no MS Excel failā esošajiem datiem.
+
+Izveidots REST tīmekļa serviss reāllaika mērījumu saņemšanai:
+
+- adrese: `POST /iot-sensors/api/readings`;
+- pieprasījuma tips: `Content-Type: application/json`;
+- lauki: `sensor` - sensora ID, `value` - mērījuma vērtība;
+- veiksmīga pieprasījuma gadījumā mērījums tiek saglabāts `iot_sensors_readings` tabulā ar pašreizējo laiku;
+- jaunais mērījums pēc tam redzams sadaļā `Telpu rādītāju pārskats` un var aktivizēt sadaļas `Brīdinājumi` noteikumus.
+
+Pārbaude ar `curl`:
+
+```bash
+curl -X POST http://localhost:8888/iot-sensors/api/readings \
+  -H "Content-Type: application/json" \
+  -d '{"sensor":"100","value":"2000"}'
+```
+
+Pārbaude ar Python skriptu:
+
+```bash
+python3 scripts/send_sensor_reading.py 100 2000
+```
 
 ## Excel datu imports
 

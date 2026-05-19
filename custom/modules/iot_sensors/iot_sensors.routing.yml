@@ -72,3 +72,13 @@ iot_sensors.alert_rule_delete:
   requirements:
     _permission: 'access content'
     rule_id: '\d+'
+
+iot_sensors.api_reading_create:
+  path: '/iot-sensors/api/readings'
+  defaults:
+    _controller: '\Drupal\iot_sensors\Controller\SensorReadingApiController::receive'
+  methods: [POST]
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
